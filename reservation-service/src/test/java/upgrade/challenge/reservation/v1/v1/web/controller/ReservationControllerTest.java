@@ -9,9 +9,12 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import upgrade.challenge.reservation.v1.v1.dto.ReservationDto;
+import upgrade.challenge.reservation.v1.v1.dto.SuccessfulReservationDto;
+import upgrade.challenge.reservation.v1.v1.web.adapter.ReservationAdapter;
 import upgrade.challenge.reservation.v1.v1.web.handler.ErrorMessage;
 
 import java.time.Instant;
@@ -20,6 +23,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -34,6 +39,9 @@ class ReservationControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @MockBean
+    private ReservationAdapter reservationAdapter;
+
     private ObjectMapper objectMapper;
     private ReservationDto reservationDto;
 
@@ -45,11 +53,20 @@ class ReservationControllerTest {
 
     @Test
     void reserveCampsite_shouldReturn201Created() throws Exception {
+        final SuccessfulReservationDto successfulReservationDto = buildSuccessfulReservationDto(
+                reservationDto.getArrivalDate(),
+                reservationDto.getDepartureDate());
+
+        when(reservationAdapter.reserveCampsite(any(ReservationDto.class)))
+                .thenReturn(successfulReservationDto);
+
         this.mockMvc.perform(post(CONTROLLER_BASE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsBytes(reservationDto)))
                 .andExpect(status().isCreated())
-                .andExpect(content().string(""));
+                .andExpect(content().string(objectMapper.writeValueAsString(successfulReservationDto)));
+
+        verify(reservationAdapter).reserveCampsite(any(ReservationDto.class));
     }
 
     @Test
@@ -58,7 +75,9 @@ class ReservationControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string(objectMapper.writeValueAsString(
-                        buildErrorMessage(REQUEST_BODY_MISSING_ERROR_MESSAGE))));
+                        buildErrorMessage())));
+
+        verifyNoInteractions(reservationAdapter);
     }
 
     @ParameterizedTest
@@ -71,6 +90,8 @@ class ReservationControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string(objectMapper.writeValueAsString(
                         buildErrorMessage(errorMessages, INVALID_FIELD_ERROR_MESSAGE))));
+
+        verifyNoInteractions(reservationAdapter);
     }
 
     private static Stream<Arguments> getInvalidRequestBodies() {
@@ -101,8 +122,17 @@ class ReservationControllerTest {
                 .build();
     }
 
-    private ErrorMessage buildErrorMessage(final String message) {
-        return buildErrorMessage(null, message);
+    private SuccessfulReservationDto buildSuccessfulReservationDto(final Instant arrivalDate,
+                                                                   final Instant departureDate) {
+        return SuccessfulReservationDto.builder()
+                .reservationId("reservation-id")
+                .arrivalDate(arrivalDate)
+                .departureDate(departureDate)
+                .build();
+    }
+
+    private ErrorMessage buildErrorMessage() {
+        return buildErrorMessage(null, ReservationControllerTest.REQUEST_BODY_MISSING_ERROR_MESSAGE);
     }
 
     private ErrorMessage buildErrorMessage(final List<?> causes, final String message) {
