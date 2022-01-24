@@ -19,7 +19,7 @@ import java.time.Instant;
 public class ReservationDto {
 
     @NotBlank
-    private String email;
+    private String guestEmail;
 
     @NotBlank
     private String firstName;

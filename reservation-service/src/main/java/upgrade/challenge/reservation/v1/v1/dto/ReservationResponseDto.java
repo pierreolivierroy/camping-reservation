@@ -14,16 +14,17 @@ import java.time.Instant;
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(chain = true)
-public class SuccessfulReservationDto {
+public class ReservationResponseDto {
 
     private String reservationId;
-
-    @Builder.Default()
-    private String status = "RESERVATION_ACCEPTED";
+    private String status;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
     private Instant arrivalDate;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
     private Instant departureDate;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
+    private Instant reservationDate;
 }

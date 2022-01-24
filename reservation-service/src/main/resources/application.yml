@@ -1,7 +1,6 @@
-server:
-  servlet:
-    context-path: /api
-
 spring:
   application:
     name: reservation-service
+  h2:
+    console:
+      enabled: true
