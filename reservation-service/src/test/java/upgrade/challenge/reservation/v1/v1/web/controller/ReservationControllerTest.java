@@ -36,7 +36,7 @@ class ReservationControllerTest {
 
     private static final String CONTROLLER_BASE_URL = "/api/reservation/v1.1";
     private static final String EMAIL = "email@test.com";
-    private static final String INVALID_FIELD_ERROR_MESSAGE = "Invalid field provided";
+    private static final String INVALID_FIELD_ERROR_MESSAGE = "Invalid field (s) provided";
     private static final String REQUEST_BODY_MISSING_ERROR_MESSAGE = "Request body is missing";
 
     @Autowired

@@ -3,10 +3,11 @@ package upgrade.challenge.reservation.v1.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.validation.BeanPropertyBindingResult;
-import org.springframework.validation.ValidationUtils;
 import upgrade.challenge.reservation.domain.Reservation;
 import upgrade.challenge.reservation.domain.ReservationStatus;
+import upgrade.challenge.reservation.exception.ValidationException;
 import upgrade.challenge.reservation.repository.ReservationRepository;
 import upgrade.challenge.reservation.validator.ReservationValidator;
 
@@ -27,9 +28,7 @@ public class ReservationService {
 
     @Transactional(rollbackFor = {SQLException.class})
     public Reservation createReservation(final Reservation reservation) {
-        final BeanPropertyBindingResult beanPropertyBindingResult = new BeanPropertyBindingResult(reservation, "reservation");
-
-        reservationValidator.validate(reservation, beanPropertyBindingResult);
+        validateReservation(reservation);
 
         return reservationRepository.save(reservation);
     }
@@ -51,10 +50,12 @@ public class ReservationService {
         final BeanPropertyBindingResult beanPropertyBindingResult = new BeanPropertyBindingResult(reservation, "reservation");
         reservationValidator.validate(reservation, beanPropertyBindingResult);
 
-
+        throwExceptionIfAnyValidationErrors(beanPropertyBindingResult);
     }
 
     private void throwExceptionIfAnyValidationErrors(final BeanPropertyBindingResult beanPropertyBindingResult) {
-        if (CollectionUtils)
+        if (!CollectionUtils.isEmpty(beanPropertyBindingResult.getFieldErrors())) {
+            throw new ValidationException(beanPropertyBindingResult.getFieldErrors());
+        }
     }
 }

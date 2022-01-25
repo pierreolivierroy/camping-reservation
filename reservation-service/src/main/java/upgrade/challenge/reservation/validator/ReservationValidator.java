@@ -22,11 +22,22 @@ public class ReservationValidator implements Validator {
         final Reservation reservationToValidate = (Reservation) target;
 
         validateArrivalDate(reservationToValidate, errors);
+        validateReservationDuration(reservationToValidate, errors);
     }
 
     private void validateArrivalDate(final Reservation reservation, final Errors errors) {
         if (DAYS.between(Instant.now(), reservation.getArrivalDate()) < 1) {
-            errors.rejectValue("arrivalDate", null, "The arrival date must be in minimum one day or more.");
+            errors.rejectValue("arrivalDate", null, "The arrival date must be in minimum 1 day or more.");
+        }
+
+        if (DAYS.between(Instant.now(), reservation.getArrivalDate()) > 30) {
+            errors.rejectValue("arrivalDate", null, "The arrival date can be up to 1 month in advance.");
+        }
+    }
+
+    private void validateReservationDuration(final Reservation reservation, final Errors errors) {
+        if (DAYS.between(reservation.getArrivalDate(), reservation.getDepartureDate()) > 3) {
+            errors.rejectValue("departureDate", null, "The departure date is too far, duration must not exceed 3 days.");
         }
     }
 }

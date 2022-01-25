@@ -18,7 +18,6 @@
     <description>reservation-service</description>
 
     <properties>
-        <commons-io.version>[2.11, 2.12.alpha)</commons-io.version>
         <commons-lang3.version>[3.12.0, 3.13.alpha)</commons-lang3.version>
         <java.version>17</java.version>
         <lombok.version>[1.18.22, 1.19.alpha)</lombok.version>
@@ -38,11 +37,6 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>${commons-io.version}</version>
-        </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
