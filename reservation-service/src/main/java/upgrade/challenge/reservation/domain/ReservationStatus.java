@@ -1,5 +1,5 @@
 package upgrade.challenge.reservation.domain;
 
 public enum ReservationStatus {
-    RESERVATION_ACCEPTED
+    RESERVATION_CANCELLED, RESERVATION_PENDING
 }

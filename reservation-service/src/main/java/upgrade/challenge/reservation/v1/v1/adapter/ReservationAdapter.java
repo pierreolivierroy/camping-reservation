@@ -26,6 +26,12 @@ public class ReservationAdapter {
         this.reservationService = reservationService;
     }
 
+    public void deleteReservation(final Long id) {
+        notNull(id, "The id parameter is mandatory.");
+
+        reservationService.cancelReservation(id);
+    }
+
     public List<ReservationResponseDto> getAllReservationsByEmail(final String email) {
         hasText(email, "The email parameter is mandatory.");
 

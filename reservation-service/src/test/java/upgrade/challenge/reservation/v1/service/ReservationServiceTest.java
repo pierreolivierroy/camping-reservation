@@ -12,7 +12,6 @@ import upgrade.challenge.reservation.repository.ReservationRepository;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -22,6 +21,7 @@ import static org.mockito.Mockito.*;
 class ReservationServiceTest {
 
     private static final String EMAIL = "email@test.com";
+    private static final Long RESERVATION_ID = 123456789L;
 
     private ReservationService testee;
 
@@ -38,10 +38,9 @@ class ReservationServiceTest {
 
     @Test
     void createReservation() {
-        final UUID reservationId = UUID.randomUUID();
-        final Reservation expected = reservation.setId(reservationId);
+        final Reservation expected = reservation.setId(RESERVATION_ID);
 
-        doAnswer(invocation -> ((Reservation) invocation.getArguments()[0]).setId(reservationId))
+        doAnswer(invocation -> ((Reservation) invocation.getArguments()[0]).setId(RESERVATION_ID))
                 .when(reservationRepository).save(reservation);
 
         final Reservation actual = testee.createReservation(reservation);
@@ -66,22 +65,22 @@ class ReservationServiceTest {
     void getAllReservationsByEmail() {
         final List<Reservation> expected = List.of(buildReservation(), buildReservation());
 
-        when(reservationRepository.findAllByGuestEmailOrderByArrivalDate(EMAIL))
+        when(reservationRepository.findAllByGuestEmailOrderByCreatedDateDesc(EMAIL))
                 .thenReturn(expected);
 
         final List<Reservation> actual = testee.getAllReservationsByEmail(EMAIL);
 
         assertThat(actual).isEqualTo(expected);
 
-        verify(reservationRepository).findAllByGuestEmailOrderByArrivalDate(EMAIL);
+        verify(reservationRepository).findAllByGuestEmailOrderByCreatedDateDesc(EMAIL);
     }
 
-    private Reservation buildReservation(final UUID id) {
+    private Reservation buildReservation(final Long id) {
         final Instant now = Instant.now();
 
         return Reservation.builder()
                 .id(id)
-                .status(ReservationStatus.RESERVATION_ACCEPTED)
+                .status(ReservationStatus.RESERVATION_PENDING)
                 .guestEmail(EMAIL)
                 .arrivalDate(now)
                 .departureDate(now.plus(1L, ChronoUnit.DAYS))
@@ -89,6 +88,6 @@ class ReservationServiceTest {
     }
 
     private Reservation buildReservation() {
-        return buildReservation(UUID.randomUUID());
+        return buildReservation(RESERVATION_ID);
     }
 }

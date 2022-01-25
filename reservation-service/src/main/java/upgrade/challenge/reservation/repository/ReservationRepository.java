@@ -5,10 +5,9 @@ import org.springframework.stereotype.Repository;
 import upgrade.challenge.reservation.domain.Reservation;
 
 import java.util.List;
-import java.util.UUID;
 
 @Repository
-public interface ReservationRepository extends JpaRepository<Reservation, UUID> {
+public interface ReservationRepository extends JpaRepository<Reservation, Long> {
 
-    List<Reservation> findAllByGuestEmailOrderByArrivalDate(final String email);
+    List<Reservation> findAllByGuestEmailOrderByCreatedDateDesc(final String email);
 }

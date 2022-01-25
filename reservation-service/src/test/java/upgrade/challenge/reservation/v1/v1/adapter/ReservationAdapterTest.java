@@ -48,6 +48,26 @@ class ReservationAdapterTest {
     }
 
     @Test
+    void deleteReservation() {
+        final Long id = 123456789L;
+
+        doNothing().when(reservationService).cancelReservation(id);
+
+        testee.deleteReservation(id);
+
+        verify(reservationService).cancelReservation(id);
+    }
+
+    @Test
+    void deleteReservation_withNullId_shouldThrowException() {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> testee.deleteReservation(null))
+                .withMessage("The id parameter is mandatory.");
+
+        verifyNoInteractions(reservationService);
+    }
+
+    @Test
     void getAllReservationsByEmail() {
         final Reservation reservation = Reservation.builder().build();
         final ReservationResponseDto reservationResponseDto = buildReservationResponseDto();
@@ -119,7 +139,7 @@ class ReservationAdapterTest {
         final Instant now = Instant.now();
 
         return Reservation.builder()
-                .status(ReservationStatus.RESERVATION_ACCEPTED)
+                .status(ReservationStatus.RESERVATION_PENDING)
                 .guestEmail(EMAIL)
                 .arrivalDate(now)
                 .departureDate(now.plus(1L, ChronoUnit.DAYS))

@@ -27,8 +27,7 @@ import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -129,6 +128,26 @@ class ReservationControllerTest {
         verifyNoInteractions(reservationAdapter);
     }
 
+    @Test
+    void cancelReservation_shouldReturn200Ok() throws Exception {
+        doNothing().when(reservationAdapter).deleteReservation(123456789L);
+
+        this.mockMvc.perform(delete(CONTROLLER_BASE_URL + "/123456789"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(""));
+
+        verify(reservationAdapter).deleteReservation(123456789L);
+    }
+
+    @Test
+    void cancelReservation_withMissingReservationId_shouldReturn400BadRequest() throws Exception {
+        this.mockMvc.perform(delete(CONTROLLER_BASE_URL + "/"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(content().string(""));
+
+        verifyNoInteractions(reservationAdapter);
+    }
+
     private static Stream<Arguments> getInvalidRequestBodies() {
         return Stream.of(
                 Arguments.arguments(buildReservationDto().setGuestEmail(null), Collections.singletonList("guestEmail must not be blank")),
@@ -161,7 +180,7 @@ class ReservationControllerTest {
                                                                final Instant departureDate) {
         return ReservationResponseDto.builder()
                 .reservationId("reservation-id")
-                .status(ReservationStatus.RESERVATION_ACCEPTED.toString())
+                .status(ReservationStatus.RESERVATION_PENDING.toString())
                 .arrivalDate(arrivalDate)
                 .departureDate(departureDate)
                 .reservationDate(Instant.now())

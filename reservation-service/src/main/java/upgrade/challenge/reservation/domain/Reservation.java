@@ -16,7 +16,6 @@ import javax.persistence.Id;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.time.Instant;
-import java.util.UUID;
 
 @Data
 @Builder
@@ -29,11 +28,11 @@ public class Reservation {
 
     @Id
     @GeneratedValue
-    private UUID id;
+    private Long id;
 
     @NotNull
     @Builder.Default
-    private ReservationStatus status = ReservationStatus.RESERVATION_ACCEPTED;
+    private ReservationStatus status = ReservationStatus.RESERVATION_PENDING;
 
     @NotBlank
     private String guestEmail;

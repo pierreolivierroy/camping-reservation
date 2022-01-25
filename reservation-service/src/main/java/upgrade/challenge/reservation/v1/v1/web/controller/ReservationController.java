@@ -31,4 +31,9 @@ public class ReservationController {
     public ReservationResponseDto makeReservation(final @Valid @RequestBody ReservationDto reservationDto) {
         return reservationAdapter.makeReservation(reservationDto);
     }
+
+    @DeleteMapping("/{id}")
+    public void cancelReservation(final @PathVariable("id") Long id) {
+        reservationAdapter.deleteReservation(id);
+    }
 }
