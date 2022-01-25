@@ -36,6 +36,10 @@ public class ReservationValidator implements Validator {
     }
 
     private void validateReservationDuration(final Reservation reservation, final Errors errors) {
+        if (DAYS.between(reservation.getArrivalDate(), reservation.getDepartureDate()) < 1) {
+            errors.rejectValue("departureDate", null, "The departure date must be at least the next day after the arrival date.");
+        }
+
         if (DAYS.between(reservation.getArrivalDate(), reservation.getDepartureDate()) > 3) {
             errors.rejectValue("departureDate", null, "The departure date is too far, duration must not exceed 3 days.");
         }
