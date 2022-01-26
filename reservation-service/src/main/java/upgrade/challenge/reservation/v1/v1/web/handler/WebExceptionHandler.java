@@ -7,6 +7,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import upgrade.challenge.reservation.exception.NotFoundException;
 import upgrade.challenge.reservation.exception.ValidationException;
 
 import java.util.List;
@@ -32,7 +33,7 @@ public class WebExceptionHandler {
 
         return ErrorMessage.builder()
                 .causes(causeMessages)
-                .message("Invalid field (s) provided")
+                .message("Invalid field(s) provided")
                 .build();
     }
 
@@ -49,6 +50,14 @@ public class WebExceptionHandler {
     public ErrorMessage validationExceptionHandler(final ValidationException exception) {
         return ErrorMessage.builder()
                 .causes(exception.getValidationErrors())
+                .message(exception.getMessage())
+                .build();
+    }
+
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(value = {NotFoundException.class})
+    public ErrorMessage notFoundExceptionHandler(final NotFoundException exception) {
+        return ErrorMessage.builder()
                 .message(exception.getMessage())
                 .build();
     }

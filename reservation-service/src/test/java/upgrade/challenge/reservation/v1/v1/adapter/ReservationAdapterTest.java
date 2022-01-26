@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
@@ -13,12 +15,14 @@ import upgrade.challenge.reservation.domain.ReservationStatus;
 import upgrade.challenge.reservation.v1.service.ReservationService;
 import upgrade.challenge.reservation.v1.v1.dto.ReservationDto;
 import upgrade.challenge.reservation.v1.v1.dto.ReservationResponseDto;
+import upgrade.challenge.reservation.v1.v1.dto.UpdateReservationDatesDto;
 import upgrade.challenge.reservation.v1.v1.mapper.ReservationMapper;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
@@ -28,6 +32,7 @@ import static org.mockito.Mockito.*;
 class ReservationAdapterTest {
 
     private static final String EMAIL = "email@test.com";
+    private static final Long RESERVATION_ID = 123456789L;
 
     private ReservationAdapter testee;
 
@@ -39,23 +44,23 @@ class ReservationAdapterTest {
 
     private Reservation reservation;
     private ReservationDto reservationDto;
+    private UpdateReservationDatesDto updateReservationDatesDto;
 
     @BeforeEach
     void setUp() {
         testee = new ReservationAdapter(reservationMapper, reservationService);
         reservation = buildReservation();
         reservationDto = buildReservationDto();
+        updateReservationDatesDto = buildUpdateReservationDatesDto();
     }
 
     @Test
     void deleteReservation() {
-        final Long id = 123456789L;
+        doNothing().when(reservationService).cancelReservation(RESERVATION_ID);
 
-        doNothing().when(reservationService).cancelReservation(id);
+        testee.deleteReservation(RESERVATION_ID);
 
-        testee.deleteReservation(id);
-
-        verify(reservationService).cancelReservation(id);
+        verify(reservationService).cancelReservation(RESERVATION_ID);
     }
 
     @Test
@@ -135,6 +140,47 @@ class ReservationAdapterTest {
                 .withMessage("The reservationDto is mandatory.");
     }
 
+    @Test
+    void updateReservationDates() {
+        final ReservationResponseDto expected = buildReservationResponseDto();
+
+        when(reservationMapper.mapUpgradeDatesDtoToEntity(RESERVATION_ID, updateReservationDatesDto))
+                .thenReturn(reservation);
+        when(reservationService.patchReservation(RESERVATION_ID, reservation)).thenReturn(reservation);
+        when(reservationMapper.mapToDto(reservation)).thenReturn(expected);
+
+        final ReservationResponseDto actual = testee.updateReservationDates(RESERVATION_ID, updateReservationDatesDto);
+
+        assertThat(actual).isEqualTo(expected);
+
+        verify(reservationMapper).mapUpgradeDatesDtoToEntity(RESERVATION_ID, updateReservationDatesDto);
+        verify(reservationService).patchReservation(RESERVATION_ID, reservation);
+        verify(reservationMapper).mapToDto(reservation);
+    }
+
+    @ParameterizedTest
+    @MethodSource("getInvalidUpdateReservationDatesDtos")
+    void updateReservationDates_withInvalidFields_shouldThrowException(final Long id,
+                                                                       final UpdateReservationDatesDto updateReservationDatesDto,
+                                                                       final String errorMessage) {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> testee.updateReservationDates(id, updateReservationDatesDto))
+                .withMessage(errorMessage);
+
+        verifyNoInteractions(reservationMapper, reservationService);
+    }
+
+    private static Stream<Arguments> getInvalidUpdateReservationDatesDtos() {
+        return Stream.of(
+                Arguments.of(null, buildUpdateReservationDatesDto(), "The id parameter is mandatory."),
+                Arguments.of(RESERVATION_ID, null, "The updateReservationDatesDto parameter is mandatory."),
+                Arguments.of(RESERVATION_ID, buildUpdateReservationDatesDto().setArrivalDate(null),
+                        "The updateReservationDatesDto#arrivalDate parameter is mandatory."),
+                Arguments.of(RESERVATION_ID, buildUpdateReservationDatesDto().setDepartureDate(null),
+                        "The updateReservationDatesDto#departureDate parameter is mandatory.")
+        );
+    }
+
     private Reservation buildReservation() {
         final Instant now = Instant.now();
 
@@ -165,9 +211,18 @@ class ReservationAdapterTest {
     private ReservationResponseDto buildReservationResponseDto(final Instant arrivalDate,
                                                                final Instant departureDate) {
         return ReservationResponseDto.builder()
-                .reservationId("temporary-id")
+                .reservationId(String.valueOf(RESERVATION_ID))
                 .arrivalDate(arrivalDate)
                 .departureDate(departureDate)
+                .build();
+    }
+
+    private static UpdateReservationDatesDto buildUpdateReservationDatesDto() {
+        final Instant now = Instant.now();
+
+        return UpdateReservationDatesDto.builder()
+                .arrivalDate(now)
+                .departureDate(now.plus(1L, ChronoUnit.DAYS))
                 .build();
     }
 }

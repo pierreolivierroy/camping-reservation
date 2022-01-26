@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 @Getter
 public class ValidationException extends RuntimeException {
 
-    private static final String DEFAULT_ERROR_MESSAGE = "Invalid field (s) provided";
+    private static final String DEFAULT_ERROR_MESSAGE = "Invalid field(s) provided";
 
     private final List<ValidationError> validationErrors;
 

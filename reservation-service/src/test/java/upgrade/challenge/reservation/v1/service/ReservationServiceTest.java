@@ -8,6 +8,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.validation.Errors;
 import upgrade.challenge.reservation.domain.Reservation;
 import upgrade.challenge.reservation.domain.ReservationStatus;
+import upgrade.challenge.reservation.exception.NotFoundException;
 import upgrade.challenge.reservation.exception.ValidationException;
 import upgrade.challenge.reservation.repository.ReservationRepository;
 import upgrade.challenge.reservation.validator.ReservationValidator;
@@ -15,6 +16,7 @@ import upgrade.challenge.reservation.validator.ReservationValidator;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -79,7 +81,7 @@ class ReservationServiceTest {
 
         assertThatExceptionOfType(ValidationException.class)
                 .isThrownBy(() -> testee.createReservation(reservation))
-                .withMessage("Invalid field (s) provided");
+                .withMessage("Invalid field(s) provided");
 
         verify(reservationValidator).validate(eq(reservation), isA(Errors.class));
         verifyNoInteractions(reservationRepository);
@@ -97,6 +99,91 @@ class ReservationServiceTest {
         assertThat(actual).isEqualTo(expected);
 
         verify(reservationRepository).findAllByGuestEmailOrderByCreatedDateDesc(EMAIL);
+    }
+
+    @Test
+    void patchReservation() {
+        final Instant newArrivalDate = Instant.now().plus(10L, ChronoUnit.DAYS);
+        final Reservation reservationWithUpdate = Reservation.builder()
+                .arrivalDate(newArrivalDate)
+                .departureDate(newArrivalDate)
+                .build();
+        final Reservation expected = buildReservation()
+                .setArrivalDate(newArrivalDate)
+                .setDepartureDate(newArrivalDate)
+                .setStatus(ReservationStatus.RESERVATION_CHANGE_PENDING);
+
+        when(reservationRepository.findById(RESERVATION_ID)).thenReturn(Optional.of(buildReservation()));
+        when(reservationRepository.save(expected)).thenReturn(expected);
+
+        final Reservation actual = testee.patchReservation(RESERVATION_ID, reservationWithUpdate);
+
+        assertThat(actual).isEqualTo(expected);
+
+        verify(reservationRepository).findById(RESERVATION_ID);
+        verify(reservationValidator).validate(eq(expected), isA(Errors.class));
+        verify(reservationRepository).save(expected);
+    }
+
+    @Test
+    void patchReservation_withSameDates_shouldNotModifyEntity() {
+        final Reservation expected = buildReservation();
+        final Reservation reservationWithUpdate = Reservation.builder()
+                .arrivalDate(expected.getArrivalDate())
+                .departureDate(expected.getDepartureDate())
+                .build();
+
+        when(reservationRepository.findById(RESERVATION_ID)).thenReturn(Optional.of(expected));
+
+        final Reservation actual = testee.patchReservation(RESERVATION_ID, reservationWithUpdate);
+
+        assertThat(actual).isEqualTo(expected);
+
+        verify(reservationRepository).findById(RESERVATION_ID);
+        verifyNoMoreInteractions(reservationRepository);
+        verifyNoInteractions(reservationValidator);
+    }
+
+    @Test
+    void patchReservation_withValidationException_shouldThrowException() {
+        final Instant newArrivalDate = Instant.now().plus(10L, ChronoUnit.DAYS);
+        final Reservation foundExistingReservation = buildReservation();
+        final Reservation modifiedExistingReservation = buildReservation()
+                .setArrivalDate(newArrivalDate)
+                .setDepartureDate(newArrivalDate)
+                .setStatus(ReservationStatus.RESERVATION_CHANGE_PENDING);
+        final Reservation reservationWithUpdate = Reservation.builder()
+                .arrivalDate(newArrivalDate)
+                .departureDate(newArrivalDate)
+                .build();
+
+        when(reservationRepository.findById(RESERVATION_ID)).thenReturn(Optional.of(foundExistingReservation));
+        doAnswer(invocation -> {
+            Errors errors = invocation.getArgument(1);
+            errors.rejectValue("arrivalDate", "errorCode", "default message");
+            return null;
+        }).when(reservationValidator).validate(eq(modifiedExistingReservation), isA(Errors.class));
+
+        assertThatExceptionOfType(ValidationException.class)
+                .isThrownBy(() -> testee.patchReservation(RESERVATION_ID, reservationWithUpdate))
+                .withMessage("Invalid field(s) provided");
+
+        verify(reservationRepository).findById(RESERVATION_ID);
+        verify(reservationValidator).validate(eq(modifiedExistingReservation), isA(Errors.class));
+        verifyNoMoreInteractions(reservationRepository);
+    }
+
+    @Test
+    void patchReservation_withEntityNotFound_shouldThrowException() {
+        when(reservationRepository.findById(RESERVATION_ID)).thenReturn(Optional.empty());
+
+        assertThatExceptionOfType(NotFoundException.class)
+                .isThrownBy(() -> testee.patchReservation(RESERVATION_ID, buildReservation()))
+                .withMessage("Item was not found.");
+
+        verify(reservationRepository).findById(RESERVATION_ID);
+        verifyNoMoreInteractions(reservationRepository);
+        verifyNoInteractions(reservationValidator);
     }
 
     private Reservation buildReservation(final Long id) {

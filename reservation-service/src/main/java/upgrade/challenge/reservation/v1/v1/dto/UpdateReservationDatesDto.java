@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+import javax.validation.constraints.NotNull;
 import java.time.Instant;
 
 @Data
@@ -14,17 +15,13 @@ import java.time.Instant;
 @AllArgsConstructor
 @NoArgsConstructor
 @Accessors(chain = true)
-public class ReservationResponseDto {
+public class UpdateReservationDatesDto {
 
-    private String reservationId;
-    private String status;
-
+    @NotNull
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
     private Instant arrivalDate;
 
+    @NotNull
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
     private Instant departureDate;
-
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
-    private Instant reservationCreationDate;
 }

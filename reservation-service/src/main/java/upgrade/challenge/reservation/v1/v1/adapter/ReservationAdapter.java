@@ -6,6 +6,7 @@ import upgrade.challenge.reservation.domain.Reservation;
 import upgrade.challenge.reservation.v1.service.ReservationService;
 import upgrade.challenge.reservation.v1.v1.dto.ReservationDto;
 import upgrade.challenge.reservation.v1.v1.dto.ReservationResponseDto;
+import upgrade.challenge.reservation.v1.v1.dto.UpdateReservationDatesDto;
 import upgrade.challenge.reservation.v1.v1.mapper.ReservationMapper;
 
 import java.util.List;
@@ -45,6 +46,19 @@ public class ReservationAdapter {
 
         final Reservation reservation = reservationService
                 .createReservation(reservationMapper.mapToEntity(reservationDto));
+
+        return reservationMapper.mapToDto(reservation);
+    }
+
+    public ReservationResponseDto updateReservationDates(final Long id,
+                                                         final UpdateReservationDatesDto updateReservationDatesDto) {
+        notNull(id, "The id parameter is mandatory.");
+        notNull(updateReservationDatesDto, "The updateReservationDatesDto parameter is mandatory.");
+        notNull(updateReservationDatesDto.getArrivalDate(), "The updateReservationDatesDto#arrivalDate parameter is mandatory.");
+        notNull(updateReservationDatesDto.getDepartureDate(), "The updateReservationDatesDto#departureDate parameter is mandatory.");
+
+        final Reservation reservation = reservationService
+                .patchReservation(id, reservationMapper.mapUpgradeDatesDtoToEntity(id, updateReservationDatesDto));
 
         return reservationMapper.mapToDto(reservation);
     }
