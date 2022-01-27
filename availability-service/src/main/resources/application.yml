@@ -4,3 +4,11 @@ server:
 spring:
   application:
     name: availability-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/availability
+    password: mysecretpassword
+    username: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
