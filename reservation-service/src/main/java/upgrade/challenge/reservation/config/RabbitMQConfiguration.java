@@ -27,13 +27,21 @@ public class RabbitMQConfiguration {
     }
 
     @Bean
+    public Queue reservationCancelledQueue() {
+        return new Queue("event.reservation.cancelled", true);
+    }
+
+    @Bean
     public Queue reservationCreatedQueue() {
         return new Queue("event.reservation.created", true);
     }
 
     @Bean
     public Map<EventType, Queue> queuesByEventType() {
-        return Map.of(EventType.RESERVATION_CREATED, reservationCreatedQueue());
+        return Map.of(
+                EventType.RESERVATION_CANCELLED, reservationCancelledQueue(),
+                EventType.RESERVATION_CREATED, reservationCreatedQueue()
+        );
     }
 
     @Bean

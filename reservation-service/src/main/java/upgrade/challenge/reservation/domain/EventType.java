@@ -5,6 +5,7 @@ import lombok.Getter;
 @Getter
 public enum EventType {
 
+    RESERVATION_CANCELLED("ReservationCancelledEvent"),
     RESERVATION_CREATED("ReservationCreatedEvent");
 
     private String value;

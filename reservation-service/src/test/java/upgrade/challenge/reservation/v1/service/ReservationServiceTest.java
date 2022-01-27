@@ -84,6 +84,53 @@ class ReservationServiceTest {
     }
 
     @Test
+    void cancelReservation() {
+        final Reservation existingTransaction = buildReservation();
+        final ArgumentCaptor<Reservation> argumentCaptor = ArgumentCaptor.forClass(Reservation.class);
+        final ReservationEvent reservationEvent = ReservationEvent.builder().build();
+
+        when(reservationRepository.findById(RESERVATION_ID)).thenReturn(Optional.of(existingTransaction));
+        when(reservationRepository.save(any(Reservation.class))).thenReturn(existingTransaction);
+        when(reservationEventFactory.buildReservationEvent(existingTransaction, EventType.RESERVATION_CANCELLED))
+                .thenReturn(reservationEvent);
+
+        testee.cancelReservation(RESERVATION_ID);
+
+        verify(reservationRepository).findById(RESERVATION_ID);
+        verify(reservationRepository).save(argumentCaptor.capture());
+        verify(reservationEventFactory).buildReservationEvent(existingTransaction, EventType.RESERVATION_CANCELLED);
+        verify(reservationEventService).create(ReservationEvent.builder().build());
+
+        final Reservation expected = existingTransaction.setStatus(ReservationStatus.RESERVATION_CANCELLED);
+        final Reservation actual = argumentCaptor.getValue();
+
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void cancelReservation_withReservationNotFound_shouldThrowException() {
+        when(reservationRepository.findById(RESERVATION_ID)).thenReturn(Optional.empty());
+
+        assertThatExceptionOfType(NotFoundException.class)
+                .isThrownBy(() -> testee.confirmReservation(RESERVATION_ID));
+
+        verify(reservationRepository).findById(RESERVATION_ID);
+        verifyNoMoreInteractions(reservationRepository);
+        verifyNoInteractions(reservationEventFactory, reservationEventService);
+    }
+
+    @Test
+    void cancelReservation_withAlreadyCancelledReservation_shouldDoNothing() {
+        when(reservationRepository.findById(RESERVATION_ID))
+                .thenReturn(Optional.of(buildReservation().setStatus(ReservationStatus.RESERVATION_CANCELLED)));
+
+        testee.cancelReservation(RESERVATION_ID);
+
+        verifyNoMoreInteractions(reservationRepository);
+        verifyNoInteractions(reservationEventFactory, reservationEventService);
+    }
+
+    @Test
     void createReservation() {
         final Reservation expected = reservation.setId(RESERVATION_ID);
         final ReservationEvent reservationEvent = ReservationEvent.builder().build();

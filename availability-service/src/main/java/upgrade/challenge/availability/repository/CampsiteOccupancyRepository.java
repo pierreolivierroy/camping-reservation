@@ -6,4 +6,6 @@ import upgrade.challenge.availability.domain.CampsiteOccupancy;
 
 @Repository
 public interface CampsiteOccupancyRepository extends JpaRepository<CampsiteOccupancy, Long> {
+
+    void deleteByReservationId(final Long reservationId);
 }

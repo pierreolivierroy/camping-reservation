@@ -46,16 +46,13 @@ public class ReservationService {
     public Reservation createReservation(final Reservation reservation) {
         validateReservation(reservation);
 
-        return saveAndPublishReservation(reservation);
+        return saveAndPublishReservationEvent(reservation, EventType.RESERVATION_CREATED);
     }
 
     @Transactional(rollbackFor = {SQLException.class})
     public void cancelReservation(final Long id) {
-        final Reservation reservationToCancel = reservationRepository.getById(id);
-
-        reservationToCancel.setStatus(ReservationStatus.RESERVATION_CANCELLED);
-        // TODO: 2022-01-26 trigger availability check event
-        reservationRepository.save(reservationToCancel);
+        reservationRepository.findById(id)
+                .ifPresentOrElse(this::cancelReservation, NotFoundException::new);
     }
 
     @Transactional(readOnly = true)
@@ -70,18 +67,6 @@ public class ReservationService {
                 .orElseThrow(NotFoundException::new);
     }
 
-    private Reservation saveAndPublishReservation(final Reservation reservation) {
-        final Reservation createdReservation = reservationRepository.save(reservation);
-        reservationEventService.create(reservationEventFactory.buildReservationEvent(reservation, EventType.RESERVATION_CREATED));
-
-        return createdReservation;
-    }
-
-    private Reservation confirmReservation(final Reservation reservation) {
-        reservation.setStatus(ReservationStatus.RESERVATION_CONFIRMED);
-        return reservationRepository.save(reservation);
-    }
-
     private void validateReservation(final Reservation reservation) {
         final BeanPropertyBindingResult beanPropertyBindingResult = new BeanPropertyBindingResult(reservation, "reservation");
         reservationValidator.validate(reservation, beanPropertyBindingResult);
@@ -93,6 +78,25 @@ public class ReservationService {
         if (!CollectionUtils.isEmpty(beanPropertyBindingResult.getFieldErrors())) {
             throw new ValidationException(beanPropertyBindingResult.getFieldErrors());
         }
+    }
+
+    private Reservation saveAndPublishReservationEvent(final Reservation reservation, final EventType eventType) {
+        final Reservation createdReservation = reservationRepository.save(reservation);
+        reservationEventService.create(reservationEventFactory.buildReservationEvent(reservation, eventType));
+
+        return createdReservation;
+    }
+
+    private void cancelReservation(final Reservation reservation) {
+        if (!ReservationStatus.RESERVATION_CANCELLED.equals(reservation.getStatus())) {
+            reservation.setStatus(ReservationStatus.RESERVATION_CANCELLED);
+            saveAndPublishReservationEvent(reservation, EventType.RESERVATION_CANCELLED);
+        }
+    }
+
+    private Reservation confirmReservation(final Reservation reservation) {
+        reservation.setStatus(ReservationStatus.RESERVATION_CONFIRMED);
+        return reservationRepository.save(reservation);
     }
 
     private Reservation patchReservation(final Reservation existingReservation, final Reservation reservation) {

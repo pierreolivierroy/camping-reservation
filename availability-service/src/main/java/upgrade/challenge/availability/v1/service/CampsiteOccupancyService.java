@@ -25,6 +25,11 @@ public class CampsiteOccupancyService {
     }
 
     @Transactional(rollbackFor = SQLException.class)
+    public void cancel(final Long reservationId) {
+        campsiteOccupancyRepository.deleteByReservationId(reservationId);
+    }
+
+    @Transactional(rollbackFor = SQLException.class)
     public CampsiteOccupancy create(final CampsiteOccupancy campsiteOccupancy) {
         final CampsiteOccupancy createdCampsiteOccupancy = campsiteOccupancyRepository.save(campsiteOccupancy);
 
