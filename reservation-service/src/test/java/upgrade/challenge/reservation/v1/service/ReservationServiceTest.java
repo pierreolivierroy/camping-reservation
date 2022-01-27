@@ -46,11 +46,13 @@ class ReservationServiceTest {
     private ReservationValidator reservationValidator;
 
     private Reservation reservation;
+    private ReservationEvent reservationEvent;
 
     @BeforeEach
     void setUp() {
         testee = new ReservationService(reservationEventFactory, reservationEventService, reservationRepository, reservationValidator);
         reservation = buildReservation(null);
+        reservationEvent = ReservationEvent.builder().build();
     }
 
     @Test
@@ -87,7 +89,6 @@ class ReservationServiceTest {
     void cancelReservation() {
         final Reservation existingTransaction = buildReservation();
         final ArgumentCaptor<Reservation> argumentCaptor = ArgumentCaptor.forClass(Reservation.class);
-        final ReservationEvent reservationEvent = ReservationEvent.builder().build();
 
         when(reservationRepository.findById(RESERVATION_ID)).thenReturn(Optional.of(existingTransaction));
         when(reservationRepository.save(any(Reservation.class))).thenReturn(existingTransaction);
@@ -133,7 +134,6 @@ class ReservationServiceTest {
     @Test
     void createReservation() {
         final Reservation expected = reservation.setId(RESERVATION_ID);
-        final ReservationEvent reservationEvent = ReservationEvent.builder().build();
 
         doAnswer(invocation -> ((Reservation) invocation.getArguments()[0]).setId(RESERVATION_ID))
                 .when(reservationRepository).save(reservation);
@@ -207,6 +207,8 @@ class ReservationServiceTest {
 
         when(reservationRepository.findById(RESERVATION_ID)).thenReturn(Optional.of(buildReservation()));
         when(reservationRepository.save(expected)).thenReturn(expected);
+        when(reservationEventFactory.buildReservationEvent(expected, EventType.RESERVATION_MODIFIED))
+                .thenReturn(reservationEvent);
 
         final Reservation actual = testee.patchReservation(RESERVATION_ID, reservationWithUpdate);
 
@@ -215,6 +217,8 @@ class ReservationServiceTest {
         verify(reservationRepository).findById(RESERVATION_ID);
         verify(reservationValidator).validate(eq(expected), isA(Errors.class));
         verify(reservationRepository).save(expected);
+        verify(reservationEventFactory).buildReservationEvent(expected, EventType.RESERVATION_MODIFIED);
+        verify(reservationEventService).create(reservationEvent);
     }
 
     @Test
@@ -234,6 +238,7 @@ class ReservationServiceTest {
         verify(reservationRepository).findById(RESERVATION_ID);
         verifyNoMoreInteractions(reservationRepository);
         verifyNoInteractions(reservationValidator);
+        verifyNoInteractions(reservationEventFactory, reservationEventService);
     }
 
     @Test
@@ -263,6 +268,7 @@ class ReservationServiceTest {
         verify(reservationRepository).findById(RESERVATION_ID);
         verify(reservationValidator).validate(eq(modifiedExistingReservation), isA(Errors.class));
         verifyNoMoreInteractions(reservationRepository);
+        verifyNoInteractions(reservationEventFactory, reservationEventService);
     }
 
     @Test
@@ -275,7 +281,7 @@ class ReservationServiceTest {
 
         verify(reservationRepository).findById(RESERVATION_ID);
         verifyNoMoreInteractions(reservationRepository);
-        verifyNoInteractions(reservationValidator);
+        verifyNoInteractions(reservationValidator, reservationEventFactory, reservationEventService);
     }
 
     private Reservation buildReservation(final Long id) {

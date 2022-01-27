@@ -107,8 +107,8 @@ public class ReservationService {
             existingReservation.setStatus(ReservationStatus.RESERVATION_CHANGE_PENDING);
 
             validateReservation(existingReservation);
-            // TODO: 2022-01-26 trigger availability check event
-            return reservationRepository.save(existingReservation);
+
+            return saveAndPublishReservationEvent(existingReservation, EventType.RESERVATION_MODIFIED);
         }
 
         return existingReservation;

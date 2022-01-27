@@ -7,7 +7,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import upgrade.challenge.reservation.domain.EventType;
-import upgrade.challenge.reservation.v1.messaging.eventmessage.ReservationCreatedEvent;
+import upgrade.challenge.reservation.v1.messaging.eventmessage.ReservationDateSelectionEvent;
 
 import java.util.Map;
 
@@ -30,6 +30,6 @@ public class EventMessagePublisher {
     @SneakyThrows
     public void publishEvent(final String eventMessage, final EventType eventType) {
         rabbitTemplate.convertAndSend(queuesByEventType.get(eventType).getName(),
-                objectMapper.readValue(eventMessage, ReservationCreatedEvent.class));
+                objectMapper.readValue(eventMessage, ReservationDateSelectionEvent.class));
     }
 }

@@ -7,7 +7,7 @@ import upgrade.challenge.reservation.domain.EventType;
 import upgrade.challenge.reservation.domain.Reservation;
 import upgrade.challenge.reservation.domain.ReservationEvent;
 import upgrade.challenge.reservation.v1.messaging.eventmessage.ReservationCancelledEvent;
-import upgrade.challenge.reservation.v1.messaging.eventmessage.ReservationCreatedEvent;
+import upgrade.challenge.reservation.v1.messaging.eventmessage.ReservationDateSelectionEvent;
 
 @Component
 public class ReservationEventFactory {
@@ -30,7 +30,7 @@ public class ReservationEventFactory {
     private String buildPayload(final Reservation reservation, final EventType eventType) {
         return switch (eventType) {
             case RESERVATION_CANCELLED -> objectMapper.writeValueAsString(buildReservationCancelledEvent(reservation));
-            case RESERVATION_CREATED -> objectMapper.writeValueAsString(buildReservationCreatedEvent(reservation));
+            case RESERVATION_CREATED, RESERVATION_MODIFIED -> objectMapper.writeValueAsString(buildReservationCreatedEvent(reservation));
         };
     }
 
@@ -40,8 +40,8 @@ public class ReservationEventFactory {
                 .build();
     }
 
-    private ReservationCreatedEvent buildReservationCreatedEvent(final Reservation reservation) {
-        return ReservationCreatedEvent.builder()
+    private ReservationDateSelectionEvent buildReservationCreatedEvent(final Reservation reservation) {
+        return ReservationDateSelectionEvent.builder()
                 .reservationId(reservation.getId())
                 .arrivalDate(reservation.getArrivalDate())
                 .departureDate(reservation.getDepartureDate())

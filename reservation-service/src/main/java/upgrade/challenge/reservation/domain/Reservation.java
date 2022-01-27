@@ -30,6 +30,7 @@ public class Reservation {
 
     @NotNull
     @Builder.Default
+    @Enumerated(EnumType.STRING)
     private ReservationStatus status = ReservationStatus.RESERVATION_PENDING;
 
     @NotBlank

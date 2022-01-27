@@ -6,7 +6,7 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 import upgrade.challenge.availability.domain.CampsiteOccupancy;
 import upgrade.challenge.availability.v1.messaging.eventmessage.ReservationCancelledEvent;
-import upgrade.challenge.availability.v1.messaging.eventmessage.ReservationCreatedEvent;
+import upgrade.challenge.availability.v1.messaging.eventmessage.ReservationDateSelectionEvent;
 import upgrade.challenge.availability.v1.service.CampsiteOccupancyService;
 
 @Component
@@ -25,15 +25,20 @@ public class EventMessageConsumer {
     }
 
     @RabbitListener(queues = {"event.reservation.created"})
-    public void consumeReservationCreatedEventMessage(@Payload ReservationCreatedEvent eventMessage) {
+    public void consumeReservationCreatedEventMessage(@Payload ReservationDateSelectionEvent eventMessage) {
         campsiteOccupancyService.create(buildCampsiteOccupancy(eventMessage));
     }
 
-    private CampsiteOccupancy buildCampsiteOccupancy(final ReservationCreatedEvent reservationCreatedEvent) {
+    @RabbitListener(queues = {"event.reservation.modified"})
+    public void consumeReservationModifiedEventMessage(@Payload ReservationDateSelectionEvent eventMessage) {
+        campsiteOccupancyService.updateOccupancyDates(eventMessage.getReservationId(), buildCampsiteOccupancy(eventMessage));
+    }
+
+    private CampsiteOccupancy buildCampsiteOccupancy(final ReservationDateSelectionEvent reservationDateSelectionEvent) {
         return CampsiteOccupancy.builder()
-                .reservationId(reservationCreatedEvent.getReservationId())
-                .arrivalDate(reservationCreatedEvent.getArrivalDate())
-                .departureDate(reservationCreatedEvent.getDepartureDate())
+                .reservationId(reservationDateSelectionEvent.getReservationId())
+                .arrivalDate(reservationDateSelectionEvent.getArrivalDate())
+                .departureDate(reservationDateSelectionEvent.getDepartureDate())
                 .build();
     }
 }
