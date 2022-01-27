@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.validation.BeanPropertyBindingResult;
+import upgrade.challenge.reservation.domain.EventType;
 import upgrade.challenge.reservation.domain.Reservation;
 import upgrade.challenge.reservation.domain.ReservationStatus;
 import upgrade.challenge.reservation.exception.NotFoundException;
@@ -18,21 +19,34 @@ import java.util.List;
 @Service
 public class ReservationService {
 
+    private final ReservationEventFactory reservationEventFactory;
+    private final ReservationEventService reservationEventService;
     private final ReservationRepository reservationRepository;
     private final ReservationValidator reservationValidator;
 
     @Autowired
-    public ReservationService(ReservationRepository reservationRepository, ReservationValidator reservationValidator) {
+    public ReservationService(ReservationEventFactory reservationEventFactory,
+                              ReservationEventService reservationEventService,
+                              ReservationRepository reservationRepository,
+                              ReservationValidator reservationValidator) {
+        this.reservationEventFactory = reservationEventFactory;
+        this.reservationEventService = reservationEventService;
         this.reservationRepository = reservationRepository;
         this.reservationValidator = reservationValidator;
+    }
+
+    @Transactional(rollbackFor = {SQLException.class})
+    public void confirmReservation(final Long id) {
+        reservationRepository.findById(id)
+                .map(this::confirmReservation)
+                .orElseThrow(NotFoundException::new);
     }
 
     @Transactional(rollbackFor = {SQLException.class})
     public Reservation createReservation(final Reservation reservation) {
         validateReservation(reservation);
 
-        // trigger availability check event
-        return reservationRepository.save(reservation);
+        return saveAndPublishReservation(reservation);
     }
 
     @Transactional(rollbackFor = {SQLException.class})
@@ -40,7 +54,7 @@ public class ReservationService {
         final Reservation reservationToCancel = reservationRepository.getById(id);
 
         reservationToCancel.setStatus(ReservationStatus.RESERVATION_CANCELLED);
-        // trigger availability check event
+        // TODO: 2022-01-26 trigger availability check event
         reservationRepository.save(reservationToCancel);
     }
 
@@ -54,6 +68,18 @@ public class ReservationService {
         return reservationRepository.findById(id)
                 .map(existingReservation -> patchReservation(existingReservation, reservation))
                 .orElseThrow(NotFoundException::new);
+    }
+
+    private Reservation saveAndPublishReservation(final Reservation reservation) {
+        final Reservation createdReservation = reservationRepository.save(reservation);
+        reservationEventService.create(reservationEventFactory.buildReservationEvent(reservation, EventType.RESERVATION_CREATED));
+
+        return createdReservation;
+    }
+
+    private Reservation confirmReservation(final Reservation reservation) {
+        reservation.setStatus(ReservationStatus.RESERVATION_CONFIRMED);
+        return reservationRepository.save(reservation);
     }
 
     private void validateReservation(final Reservation reservation) {
@@ -77,7 +103,7 @@ public class ReservationService {
             existingReservation.setStatus(ReservationStatus.RESERVATION_CHANGE_PENDING);
 
             validateReservation(existingReservation);
-            // trigger availability check event
+            // TODO: 2022-01-26 trigger availability check event
             return reservationRepository.save(existingReservation);
         }
 

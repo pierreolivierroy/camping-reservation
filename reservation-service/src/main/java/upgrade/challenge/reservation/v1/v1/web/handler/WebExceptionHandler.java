@@ -61,4 +61,12 @@ public class WebExceptionHandler {
                 .message(exception.getMessage())
                 .build();
     }
+
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(value = {Exception.class})
+    public ErrorMessage internalServerErrorExceptionHandler() {
+        return ErrorMessage.builder()
+                .message("Internal server error")
+                .build();
+    }
 }

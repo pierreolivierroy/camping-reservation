@@ -3,10 +3,13 @@ package upgrade.challenge.reservation.v1.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.validation.Errors;
+import upgrade.challenge.reservation.domain.EventType;
 import upgrade.challenge.reservation.domain.Reservation;
+import upgrade.challenge.reservation.domain.ReservationEvent;
 import upgrade.challenge.reservation.domain.ReservationStatus;
 import upgrade.challenge.reservation.exception.NotFoundException;
 import upgrade.challenge.reservation.exception.ValidationException;
@@ -31,6 +34,12 @@ class ReservationServiceTest {
     private ReservationService testee;
 
     @Mock
+    private ReservationEventFactory reservationEventFactory;
+
+    @Mock
+    private ReservationEventService reservationEventService;
+
+    @Mock
     private ReservationRepository reservationRepository;
 
     @Mock
@@ -40,16 +49,49 @@ class ReservationServiceTest {
 
     @BeforeEach
     void setUp() {
-        testee = new ReservationService(reservationRepository, reservationValidator);
+        testee = new ReservationService(reservationEventFactory, reservationEventService, reservationRepository, reservationValidator);
         reservation = buildReservation(null);
+    }
+
+    @Test
+    void confirmReservation() {
+        final Reservation existingTransaction = buildReservation();
+        final ArgumentCaptor<Reservation> argumentCaptor = ArgumentCaptor.forClass(Reservation.class);
+
+        when(reservationRepository.findById(RESERVATION_ID)).thenReturn(Optional.of(existingTransaction));
+        when(reservationRepository.save(any(Reservation.class))).thenReturn(existingTransaction);
+
+        testee.confirmReservation(RESERVATION_ID);
+
+        verify(reservationRepository).findById(RESERVATION_ID);
+        verify(reservationRepository).save(argumentCaptor.capture());
+
+        final Reservation expected = existingTransaction.setStatus(ReservationStatus.RESERVATION_CONFIRMED);
+        final Reservation actual = argumentCaptor.getValue();
+
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void confirmReservation_withReservationNotFound_shouldThrowException() {
+        when(reservationRepository.findById(RESERVATION_ID)).thenReturn(Optional.empty());
+
+        assertThatExceptionOfType(NotFoundException.class)
+                .isThrownBy(() -> testee.confirmReservation(RESERVATION_ID));
+
+        verify(reservationRepository).findById(RESERVATION_ID);
+        verifyNoMoreInteractions(reservationRepository);
     }
 
     @Test
     void createReservation() {
         final Reservation expected = reservation.setId(RESERVATION_ID);
+        final ReservationEvent reservationEvent = ReservationEvent.builder().build();
 
         doAnswer(invocation -> ((Reservation) invocation.getArguments()[0]).setId(RESERVATION_ID))
                 .when(reservationRepository).save(reservation);
+        when(reservationEventFactory.buildReservationEvent(expected, EventType.RESERVATION_CREATED))
+                .thenReturn(reservationEvent);
 
         final Reservation actual = testee.createReservation(reservation);
 
@@ -57,6 +99,8 @@ class ReservationServiceTest {
 
         verify(reservationValidator).validate(eq(reservation), isA(Errors.class));
         verify(reservationRepository).save(reservation);
+        verify(reservationEventFactory).buildReservationEvent(expected, EventType.RESERVATION_CREATED);
+        verify(reservationEventService).create(reservationEvent);
     }
 
     @Test
@@ -69,6 +113,7 @@ class ReservationServiceTest {
 
         verify(reservationValidator).validate(eq(reservation), isA(Errors.class));
         verify(reservationRepository).save(reservation);
+        verifyNoInteractions(reservationEventFactory, reservationEventService);
     }
 
     @Test
@@ -84,7 +129,7 @@ class ReservationServiceTest {
                 .withMessage("Invalid field(s) provided");
 
         verify(reservationValidator).validate(eq(reservation), isA(Errors.class));
-        verifyNoInteractions(reservationRepository);
+        verifyNoInteractions(reservationRepository, reservationEventFactory, reservationEventService);
     }
 
     @Test
