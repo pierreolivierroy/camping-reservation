@@ -15,6 +15,8 @@ import upgrade.challenge.availability.v1.messaging.publisher.EventMessagePublish
 import upgrade.challenge.availability.validator.CampsiteOccupancyValidator;
 
 import java.sql.SQLException;
+import java.time.Instant;
+import java.util.List;
 
 @Service
 public class CampsiteOccupancyService {
@@ -46,6 +48,11 @@ public class CampsiteOccupancyService {
         publishOccupancyConfirmation(createdCampsiteOccupancy);
 
         return createdCampsiteOccupancy;
+    }
+
+    @Transactional(readOnly = true)
+    public List<CampsiteOccupancy> getAllBetweenDates(final Instant arrivalDate, final Instant departureDate) {
+        return campsiteOccupancyRepository.findAllByArrivalDateGreaterThanEqualAndDepartureDateLessThanEqualOrderByArrivalDate(arrivalDate, departureDate);
     }
 
     public void publishOccupancyConfirmation(final CampsiteOccupancy campsiteOccupancy) {

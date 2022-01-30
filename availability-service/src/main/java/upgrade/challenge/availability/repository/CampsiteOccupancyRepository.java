@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository;
 import upgrade.challenge.availability.domain.CampsiteOccupancy;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -17,4 +18,6 @@ public interface CampsiteOccupancyRepository extends JpaRepository<CampsiteOccup
     long countByArrivalDateLessThanEqualAndDepartureDateGreaterThanEqual(final Instant arrivalDate, final Instant departureDate);
 
     long countByDepartureDateGreaterThanEqualAndDepartureDateLessThanEqual(final Instant arrivalDate, final Instant departureDate);
+
+    List<CampsiteOccupancy> findAllByArrivalDateGreaterThanEqualAndDepartureDateLessThanEqualOrderByArrivalDate(final Instant arrivalDate, final Instant departureDate);
 }
