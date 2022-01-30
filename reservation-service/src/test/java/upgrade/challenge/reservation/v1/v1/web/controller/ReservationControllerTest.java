@@ -160,8 +160,8 @@ class ReservationControllerTest {
     @Test
     void cancelReservation_withMissingReservationId_shouldReturn400BadRequest() throws Exception {
         this.mockMvc.perform(delete(CONTROLLER_BASE_URL + "/"))
-                .andExpect(status().isMethodNotAllowed())
-                .andExpect(content().string(""));
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string(objectMapper.writeValueAsString(buildErrorMessage("Internal server error"))));
 
         verifyNoInteractions(reservationAdapter);
     }
@@ -205,8 +205,8 @@ class ReservationControllerTest {
     @Test
     void updateReservationDates_withMissingPathVariableId() throws Exception {
         this.mockMvc.perform(patch(CONTROLLER_BASE_URL + "/"))
-                .andExpect(status().isMethodNotAllowed())
-                .andExpect(content().string(""));
+                .andExpect(status().isInternalServerError())
+                .andExpect(content().string(objectMapper.writeValueAsString(buildErrorMessage("Internal server error"))));
 
         verifyNoInteractions(reservationAdapter);
     }

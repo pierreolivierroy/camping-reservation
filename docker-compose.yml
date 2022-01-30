@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  availability-service:
+    build:
+      context: availability-service
+    container_name: availability-service
+    depends_on:
+      - postgres-database
+      - rabbitmq
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-database:5432/availability
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=mysecretpassword
+      - SPRING_RABBITMQ_HOST=rabbitmq
+    ports:
+      - "8081:8081"
+
+  reservation-service:
+    build:
+      context: reservation-service
+    container_name: reservation-service
+    depends_on:
+      - postgres-database
+      - rabbitmq
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-database:5432/reservation
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=mysecretpassword
+      - SPRING_RABBITMQ_HOST=rabbitmq
+    ports:
+      - "8080:8080"
+
+  postgres-database:
+    image: "postgres:alpine"
+    container_name: postgres-database
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=mysecretpassword
+    volumes:
+      - .database/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  rabbitmq:
+    image: "rabbitmq:management-alpine"
+    container_name: rabbitmq-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
