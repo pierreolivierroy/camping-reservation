@@ -33,7 +33,15 @@ public class RabbitPublisherConfiguration {
     }
 
     @Bean
+    public Queue reservationRollbackQueue() {
+        return new Queue("event.reservation.rollback", true);
+    }
+
+    @Bean
     public Map<EventType, Queue> queuesByEventType() {
-        return Map.of(EventType.CAMPSITE_RESERVED, campsiteReservedQueue());
+        return Map.of(
+                EventType.CAMPSITE_RESERVED, campsiteReservedQueue(),
+                EventType.CAMPSITE_RESERVATION_ROLLBACK, reservationRollbackQueue()
+        );
     }
 }

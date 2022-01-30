@@ -67,6 +67,13 @@ public class ReservationService {
                 .orElseThrow(NotFoundException::new);
     }
 
+    @Transactional(rollbackFor = {SQLException.class})
+    public Reservation rollbackReservation(final Long id) {
+        return reservationRepository.findById(id)
+                .map(this::rollbackReservation)
+                .orElseThrow(NotFoundException::new);
+    }
+
     private void validateReservation(final Reservation reservation) {
         final BeanPropertyBindingResult beanPropertyBindingResult = new BeanPropertyBindingResult(reservation, "reservation");
         reservationValidator.validate(reservation, beanPropertyBindingResult);
@@ -112,5 +119,11 @@ public class ReservationService {
         }
 
         return existingReservation;
+    }
+
+    private Reservation rollbackReservation(final Reservation reservation) {
+        reservation.setStatus(ReservationStatus.RESERVATION_REJECTED);
+
+        return reservationRepository.save(reservation);
     }
 }

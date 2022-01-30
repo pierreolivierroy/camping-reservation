@@ -5,6 +5,7 @@ import lombok.Getter;
 @Getter
 public enum EventType {
 
+    CAMPSITE_RESERVATION_ROLLBACK("CampsiteReservationRollbackEvent"),
     CAMPSITE_RESERVED("CampsiteReservedEvent");
 
     private String value;

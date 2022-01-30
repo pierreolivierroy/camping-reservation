@@ -1,6 +1,5 @@
 package upgrade.challenge.availability.v1.messaging.publisher;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -13,15 +12,12 @@ import java.util.Map;
 @Component
 public class EventMessagePublisher {
 
-    private final ObjectMapper objectMapper;
     private final Map<EventType, Queue> queuesByEventType;
     private final RabbitTemplate rabbitTemplate;
 
     @Autowired
-    public EventMessagePublisher(ObjectMapper objectMapper,
-                                 Map<EventType, Queue> queuesByEventType,
+    public EventMessagePublisher(Map<EventType, Queue> queuesByEventType,
                                  RabbitTemplate rabbitTemplate) {
-        this.objectMapper = objectMapper;
         this.queuesByEventType = queuesByEventType;
         this.rabbitTemplate = rabbitTemplate;
     }
