@@ -15,9 +15,9 @@ public interface CampsiteOccupancyRepository extends JpaRepository<CampsiteOccup
 
     Optional<CampsiteOccupancy> findByReservationId(final Long reservationId);
 
-    long countByArrivalDateLessThanEqualAndDepartureDateGreaterThanEqual(final Instant arrivalDate, final Instant departureDate);
+    List<CampsiteOccupancy> findAllByArrivalDateLessThanEqualAndDepartureDateGreaterThanEqual(final Instant arrivalDate, final Instant departureDate);
 
-    long countByDepartureDateGreaterThanEqualAndDepartureDateLessThanEqual(final Instant arrivalDate, final Instant departureDate);
+    List<CampsiteOccupancy> findAllByDepartureDateGreaterThanEqualAndDepartureDateLessThanEqual(final Instant arrivalDate, final Instant departureDate);
 
     List<CampsiteOccupancy> findAllByArrivalDateGreaterThanEqualAndDepartureDateLessThanEqualOrderByArrivalDate(final Instant arrivalDate, final Instant departureDate);
 }

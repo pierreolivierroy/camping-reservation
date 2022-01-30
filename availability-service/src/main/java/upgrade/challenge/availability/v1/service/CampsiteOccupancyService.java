@@ -55,10 +55,7 @@ public class CampsiteOccupancyService {
         return campsiteOccupancyRepository.findAllByArrivalDateGreaterThanEqualAndDepartureDateLessThanEqualOrderByArrivalDate(arrivalDate, departureDate);
     }
 
-    public void publishOccupancyConfirmation(final CampsiteOccupancy campsiteOccupancy) {
-        eventMessagePublisher.publishEvent(buildCampsiteReservedEvent(campsiteOccupancy), EventType.CAMPSITE_RESERVED);
-    }
-
+    @Transactional(rollbackFor = SQLException.class)
     public CampsiteOccupancy updateOccupancyDates(final Long reservationId, final CampsiteOccupancy campsiteOccupancy) {
         return campsiteOccupancyRepository.findByReservationId(reservationId)
                 .map(existingCampsiteOccupancy -> updateOccupancyDates(existingCampsiteOccupancy, campsiteOccupancy))
@@ -70,6 +67,10 @@ public class CampsiteOccupancyService {
         campsiteOccupancyValidator.validate(campsiteOccupancy, beanPropertyBindingResult);
 
         publishRollbackEvent(beanPropertyBindingResult, campsiteOccupancy);
+    }
+
+    private void publishOccupancyConfirmation(final CampsiteOccupancy campsiteOccupancy) {
+        eventMessagePublisher.publishEvent(buildCampsiteReservedEvent(campsiteOccupancy), EventType.CAMPSITE_RESERVED);
     }
 
     private void publishRollbackEvent(final BeanPropertyBindingResult beanPropertyBindingResult,

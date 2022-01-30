@@ -7,6 +7,9 @@ import org.springframework.validation.Validator;
 import upgrade.challenge.availability.domain.CampsiteOccupancy;
 import upgrade.challenge.availability.repository.CampsiteOccupancyRepository;
 
+import java.util.List;
+import java.util.Objects;
+
 @Component
 public class CampsiteOccupancyValidator implements Validator {
 
@@ -33,19 +36,21 @@ public class CampsiteOccupancyValidator implements Validator {
     }
 
     private void validateArrivalDate(final CampsiteOccupancy campsiteOccupancy, final Errors errors) {
-        long numberOfExistingOccupancies = campsiteOccupancyRepository
-                .countByArrivalDateLessThanEqualAndDepartureDateGreaterThanEqual(campsiteOccupancy.getArrivalDate(), campsiteOccupancy.getDepartureDate());
+        final List<CampsiteOccupancy> occupancies = campsiteOccupancyRepository
+                .findAllByArrivalDateLessThanEqualAndDepartureDateGreaterThanEqual(campsiteOccupancy.getArrivalDate(),
+                        campsiteOccupancy.getDepartureDate());
 
-        if (numberOfExistingOccupancies > 0) {
+        if (occupancies.stream().anyMatch(occupancy -> !Objects.equals(occupancy.getReservationId(), campsiteOccupancy.getReservationId()))) {
             errors.rejectValue("arrivalDate", null, DATE_UNAVAILABLE_ERROR_MESSAGE);
         }
     }
 
     private void validateDepartureDate(final CampsiteOccupancy campsiteOccupancy, final Errors errors) {
-        long numberOfExistingOccupancies = campsiteOccupancyRepository
-                .countByDepartureDateGreaterThanEqualAndDepartureDateLessThanEqual(campsiteOccupancy.getArrivalDate(), campsiteOccupancy.getDepartureDate());
+        final List<CampsiteOccupancy> occupancies = campsiteOccupancyRepository
+                .findAllByDepartureDateGreaterThanEqualAndDepartureDateLessThanEqual(campsiteOccupancy.getArrivalDate(),
+                        campsiteOccupancy.getDepartureDate());
 
-        if (numberOfExistingOccupancies > 0) {
+        if (occupancies.stream().anyMatch(occupancy -> !Objects.equals(occupancy.getReservationId(), campsiteOccupancy.getReservationId()))) {
             errors.rejectValue("departureDate", null, DATE_UNAVAILABLE_ERROR_MESSAGE);
         }
     }
