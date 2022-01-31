@@ -29,7 +29,7 @@ public class ReservationEvent {
 
     @NotBlank
     @Builder.Default
-    private String aggregateType = "Order";
+    private String aggregateType = "Reservation";
 
     @NotNull
     private Long aggregateId;
