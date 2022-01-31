@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: reservation-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/reservation
+    password: mysecretpassword
+    username: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
